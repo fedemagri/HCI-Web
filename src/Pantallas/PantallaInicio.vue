@@ -4,9 +4,73 @@
     import BodyGrid from '@/components/BodyGrid.vue';
     import ButtonsNavBar from '@/components/ButtonsNavBar.vue';
     import Section from '@/components/Section.vue';
+    import VChart from 'vue-echarts';
+    import { ref, computed } from 'vue';
+    import { use } from 'echarts/core';
+    import { CanvasRenderer } from 'echarts/renderers';
+    import { PieChart } from 'echarts/charts';
+    import { TitleComponent, TooltipComponent, LegendComponent } from 'echarts/components';
 
     const pesos = 25.761;
     const centavos = 57;
+
+    use([CanvasRenderer, PieChart, TitleComponent, TooltipComponent, LegendComponent]);
+  
+    const recentTransactions = ref([
+        { id: 1, description: 'Grocery Shopping', amount: -75.50, category: 'Food' },
+        { id: 2, description: 'Salary Deposit', amount: 2000.00, category: 'Income' },
+        { id: 3, description: 'Electric Bill', amount: -120.00, category: 'Utilities' },
+        { id: 4, description: 'Online Purchase', amount: -50.25, category: 'Shopping' },
+        { id: 5, description: 'Restaurant Dinner', amount: -85.00, category: 'Food' },
+    ]);
+    
+    const spendingByCategory = computed(() => {
+        const categories = {};
+        recentTransactions.value.forEach(transaction => {
+        if (transaction.amount < 0) {
+            if (categories[transaction.category]) {
+            categories[transaction.category] += Math.abs(transaction.amount);
+            } else {
+            categories[transaction.category] = Math.abs(transaction.amount);
+            }
+        }
+        });
+        return Object.entries(categories).map(([name, value]) => ({ name, value }));
+    });
+    
+    const chartOption = computed(() => ({
+        tooltip: {
+        trigger: 'item',
+        formatter: '{a} <br/>{b}: ${c} ({d}%)'
+        },
+        legend: {
+        orient: 'vertical',
+        left: 'left'
+        },
+        series: [
+        {
+            name: 'Spending',
+            type: 'pie',
+            radius: ['50%', '70%'],
+            avoidLabelOverlap: false,
+            label: {
+            show: false,
+            position: 'center'
+            },
+            emphasis: {
+            label: {
+                show: true,
+                fontSize: '18',
+                fontWeight: 'bold'
+            }
+            },
+            labelLine: {
+            show: false
+            },
+            data: spendingByCategory.value
+        }
+        ]
+    }));
 
 </script>
 
@@ -61,7 +125,7 @@
     
             <AppDivision class="ma-6" cols="12" sm="6" md="4">
                 <Section class="ma-3">
-
+                    <v-chart class="chart" :option="chartOption" />
                 </Section>
             </AppDivision>
         </BodyGrid>
